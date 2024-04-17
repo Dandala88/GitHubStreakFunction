@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "GitHubStreakFunction": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7138",
+      "launchBrowser": false
+    }
+  }
+}
