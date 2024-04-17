@@ -7,29 +7,49 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Net.Mail;
+using System.Net;
+using System.Collections.Generic;
+using System.Net.Http;
 
 namespace GitHubStreakFunction
 {
     public static class Function1
     {
+
         [FunctionName("GitHubStreakFunction")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            ILogger log)
+        public static async Task Run([TimerTrigger("*/30 * * * * *")] TimerInfo myTimer, ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            string appEmail = "*****";
+            string appPassword = "*****";
+            string recipient = "*****";
+            string org = "*****";
+            string token = "*****";
+            string repo = "*****";
 
-            string name = req.Query["name"];
+            log.LogInformation($"GitHub Streak Timer trigger function executed at: {DateTime.Now}");
 
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
+            var url = $"https://api.github.com/repos/{org}/{repo}";
+            var headers = new Dictionary<string, string>();
+            headers.Add("User-Agent", "request");
+            headers.Add("bearer", token);
+            var httpClient = new HttpClient();
+            var repos = await httpClient.GetAsync(url);
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            var content = repos.Content.ReadAsStringAsync();
+            var t = 0;
 
-            return new OkObjectResult(responseMessage);
+
+            var smtpClient = new SmtpClient("smtp.gmail.com")
+            {
+                Credentials = new NetworkCredential(appEmail, appPassword),
+                EnableSsl = true,
+            };
+
+            smtpClient.Send(appEmail, recipient, "GitHub Streak", "Hey just letting you know about github streak. We haven't implemented it yet though.");
+
+            log.LogInformation($"GitHub Streak Timer trigger function completed at: {DateTime.Now}");
+
         }
     }
 }
