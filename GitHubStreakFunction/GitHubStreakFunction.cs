@@ -19,7 +19,7 @@ namespace GitHubStreakFunction
     {
 
         [FunctionName("GitHubStreakFunction")]
-        public static async Task Run([TimerTrigger("*/30 * * * * *")] TimerInfo myTimer, ILogger log)
+        public static async Task Run([TimerTrigger("0 10,17,22 * * *")] TimerInfo myTimer, ILogger log)
         {
             string appEmail = "*****";
             string appPassword = "*****";
@@ -53,7 +53,21 @@ namespace GitHubStreakFunction
                 var commits = JsonSerializer.Deserialize<List<Commits>>(commitsContent);
                 totalCommits.AddRange(commits);
             }
-            var userCommitsToday = totalCommits.Where(c => c.Committer.Login == user && c.Commit.Author.Date >= DateTime.Now.Date).ToList();
+            var orderedCommits = totalCommits.OrderBy(tc => tc.Commit.Author.Date);
+
+            var committedToday = orderedCommits.LastOrDefault().Commit.Author.Date >= DateTime.Now.Date;
+
+            //for(int i = orderedCommits.Count() - 1; i >= 0; i--)
+            //{
+            //    //Have to keep track of day and keep looking back
+            //    //We need to ignore current day to give ourselves a chance to continue the streak
+            //}
+
+            var message = string.Empty;
+            if (committedToday)
+                message = "Congrats! You've done some more work. Be proud and keep it up!";
+            else
+                message = "HEY! You want to keep up your streak don't you? Get on and commit something already. It's ok if you don't but you should.";
 
             var smtpClient = new SmtpClient("smtp.gmail.com")
             {
@@ -61,7 +75,7 @@ namespace GitHubStreakFunction
                 EnableSsl = true,
             };
 
-            smtpClient.Send(appEmail, recipient, "GitHub Streak", "Hey just letting you know about github streak. We haven't implemented it yet though.");
+            smtpClient.Send(appEmail, recipient, "GitHub Streak", message);
 
             log.LogInformation($"GitHub Streak Timer trigger function completed at: {DateTime.Now}");
 
